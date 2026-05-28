@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { width: 360px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 20px 15px; background-color: #fcfcfc; color: #333; margin: 0; }
+    
+    .btn { padding: 12px 15px; cursor: pointer; color: white; border: none; border-radius: 8px; margin: 10px 0; width: 100%; display: block; box-sizing: border-box; font-size: 15px; font-weight: 600; letter-spacing: 0.5px; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .btn:active { transform: translateY(2px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    
+    #privacy-btn { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    #tos-btn { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: #fff; }
+    #back-btn { background: #bdc3c7; color: #2c3e50; display: none; }
+    
+    /* 简约炫酷的进度条 UI */
+    #progress-ui { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 30px 0; }
+    .loader-dots { display: flex; align-items: center; justify-content: center; gap: 25px; position: relative; margin-bottom: 20px; }
+    /* 后面的连接线 */
+    .loader-dots::before { content: ''; position: absolute; left: 15%; right: 15%; height: 2px; background: #e0e0e0; z-index: 1; top: 50%; transform: translateY(-50%); }
+    
+    .dot { width: 18px; height: 18px; border-radius: 50%; background: #e0e0e0; z-index: 2; transition: all 0.4s ease; position: relative; }
+    .dot.completed { background: #00e676; box-shadow: 0 0 12px rgba(0, 230, 118, 0.6); transform: scale(1.1); }
+    .dot.running { background: #4facfe; box-shadow: 0 0 15px rgba(79, 172, 254, 0.8); animation: pulse 1.2s ease-in-out infinite alternate; }
+    
+    @keyframes pulse { 
+      0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 8px rgba(79, 172, 254, 0.5); } 
+      100% { transform: scale(1.5); opacity: 1; box-shadow: 0 0 20px rgba(79, 172, 254, 1); } 
+    }
+    
+    #progress-text { font-size: 13px; font-weight: bold; color: #7f8c8d; letter-spacing: 1px; }
+
+    /* 结果展示相关样式优化 */
+    #status { margin-top: 10px; font-size: 13px; text-align: left; }
+    .final-score-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 18px; border-radius: 10px; text-align: center; margin-bottom: 15px; box-shadow: 0 6px 15px rgba(118, 75, 162, 0.3); }
+    .final-score-box p { margin: 0; font-size: 13px; opacity: 0.9; }
+    .final-score-box span { font-size: 28px; font-weight: bold; display: block; margin-top: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);}
+    
+    .section-title { color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 6px; margin: 20px 0 10px 0; font-size: 14px; font-weight: bold; }
+    
+    .score-item { background: #fff; padding: 12px; margin-bottom: 10px; border-left: 4px solid #4facfe; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .sc-title { font-weight: bold; color: #34495e; font-size: 13px; }
+    .sc-val { color: #e74c3c; font-weight: bold; float: right; font-size: 14px; }
+    .sc-comment { display: block; margin-top: 6px; color: #7f8c8d; line-height: 1.4; font-size: 12px; }
+    
+    .deduct-item { background: #fff; padding: 10px; margin-bottom: 8px; border-left: 4px solid #e74c3c; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); display: flex; justify-content: space-between; }
+    .no-deduct-item { background: #fff; padding: 10px; margin-bottom: 8px; border-left: 4px solid #2ecc71; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+  <div id="btn-container">
+    <h3 style="color: #2c3e50; margin-top: 5px; margin-bottom: 20px; font-size: 18px;">用户协议&隐私政策 AI 分析器</h3>
+    <button id="privacy-btn" class="btn">🛡️ 隐私政策智能评估</button>
+    <button id="tos-btn" class="btn">📜 用户协议智能评估</button>
+  </div>
+  
+  <div id="progress-ui">
+    <div class="loader-dots">
+      <div class="dot" id="dot-1"></div>
+      <div class="dot" id="dot-2"></div>
+      <div class="dot" id="dot-3"></div>
+    </div>
+    <div id="progress-text">初始化 AI 模型...</div>
+  </div>
+  
+  <div id="status"></div>
+  <button id="back-btn" class="btn" style="margin-top: 20px;">返回重新分析</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>

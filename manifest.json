@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Text Extractor Ext",
+  "version": "1.0",
+  "description": "Send webpage text to Python server",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*"
+  ],
+  "icons": {
+    "128": "icons/icon-128.png"
+  }
+}
