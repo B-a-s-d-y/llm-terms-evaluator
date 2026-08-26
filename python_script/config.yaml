@@ -1,1 +1,6 @@
+# 默认使用 DeepSeek；如需切换 OrcaRouter，改为：
+#   llm_provider: "orcarouter"
+#   orcarouter_api_key: "sk-orca-..."
+#   model: "deepseek-chat"
+# 也可通过环境变量覆盖：LLM_PROVIDER / LLM_BASE_URL / LLM_MODEL / ORCAROUTER_API_KEY
 deepseek_api_key: "YOUR_KEY"

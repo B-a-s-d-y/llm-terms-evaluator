@@ -24,6 +24,20 @@ def _load_key_from_config(path):
         return m.group(1).strip()
     return None
 
+def _load_config(path):
+    """读取 config.yaml 中的可选配置项（provider / base_url / model / api_key）。"""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+    except FileNotFoundError:
+        return {}
+    cfg = {}
+    for key in ["llm_provider", "base_url", "model", "deepseek_api_key", "orcarouter_api_key", "api_key"]:
+        m = re.search(rf"{key}\s*:\s*[\"']?([^\"'\n]+)[\"']?", text)
+        if m:
+            cfg[key] = m.group(1).strip()
+    return cfg
+
 def build_prompt(policy_text, list_md_text, criteria):
     example = {"scores": {}, "special_flags": {}}
     
@@ -172,16 +186,33 @@ def evaluate_policy(text, mode, progress_callback=None, force=False, page_title=
         
     criteria = load_json(criteria_path)
 
-    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    cfg = _load_config(CONFIG_PATH)
+
+    provider = (os.environ.get("LLM_PROVIDER") or cfg.get("llm_provider") or "deepseek").strip().lower()
+    if provider not in ("deepseek", "orcarouter"):
+        provider = "deepseek"
+
+    if provider == "orcarouter":
+        default_base_url = "https://api.orcarouter.ai/v1"
+        api_key_env = "ORCAROUTER_API_KEY"
+    else:
+        default_base_url = "https://api.deepseek.com"
+        api_key_env = "DEEPSEEK_API_KEY"
+
+    api_key = os.environ.get(api_key_env) or os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
-        api_key = _load_key_from_config(CONFIG_PATH)
+        api_key = cfg.get(api_key_env.lower()) or _load_key_from_config(CONFIG_PATH)
         if api_key:
-            os.environ["DEEPSEEK_API_KEY"] = api_key
+            os.environ[api_key_env] = api_key
 
     if not api_key:
-        raise RuntimeError("Deepseek API key 未找到。请设置环境变量或在 config.yaml 中添加。")
-        
-    client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+        raise RuntimeError(f"API key 未找到（provider={provider}）。请设置环境变量 {api_key_env} 或在 config.yaml 中添加。")
+
+    base_url = os.environ.get("LLM_BASE_URL") or cfg.get("base_url") or default_base_url
+    model = os.environ.get("LLM_MODEL") or cfg.get("model") or "deepseek-chat"
+
+    print(f"使用 LLM Provider: {provider} | base_url: {base_url} | model: {model}")
+    client = OpenAI(api_key=api_key, base_url=base_url)
     
     if mode == "sec":
         target_name = "隐私政策"
@@ -200,7 +231,7 @@ def evaluate_policy(text, mode, progress_callback=None, force=False, page_title=
         check_prompt = f"请判定下方文本内容是否包含【{target_name}】的核心特征（或类似声明协议草案）。如果包含或大概率是一份协议条款内容，请仅回复唯一单词 YES；如果更像是【{other_name}】或者完全无关（如娱乐八卦、新闻报道、无文字商品页），请仅回复 NO。\n文本片段：\n{text[:3000]}"
         try:
             check_resp = client.chat.completions.create(
-                model="deepseek-chat",
+                model=model,
                 messages=[
                     {"role": "system", "content": "你是一个严谨的网页分类器。只能输出 YES 或 NO。"},
                     {"role": "user", "content": check_prompt}
@@ -223,7 +254,7 @@ def evaluate_policy(text, mode, progress_callback=None, force=False, page_title=
     for i in range(num_runs):
         print(f"开始第 {i+1} 次模型评估调用...")
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            model=model,
             messages=[
                 {"role": "system", "content": "你是一个根据给定评分细则对隐私政策逐项评分并输出严格符合示例 JSON 的评估助手。输出仅为 JSON。"},
                 {"role": "user", "content": prompt},
