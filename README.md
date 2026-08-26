@@ -1,103 +1,51 @@
-# 🛡️ 隐私政策与用户协议 AI 智能分析器 (Privacy & TOS AI Analyzer)
+# Privacy & TOS AI Analyzer · 隐私政策与用户协议 AI 智能分析器
 
-> 一个基于大模型（LLM）的 Chrome 浏览器插件，专为揭示冗长老旧的“隐私政策”与“服务条款（TOS）”中的霸王条款、过度数据采集和责任规避而设计。
+> Lightweight Edge/Chrome extension + local Python backend that uses LLMs to analyze privacy policies and Terms of Service: legal-dimension scoring, unfair-clause flags, radar chart.
+> 轻量级 Edge/Chrome 插件 + 本地 Python 后端：用大模型分析《隐私政策》与《用户协议》，按法律维度打分、标出霸王条款、生成雷达图。
 
-## 📖 项目简介
+## Features · 核心功能
 
-在当今的数字时代，注册应用或使用服务时，动辄上万字的《隐私政策》和《用户协议》常常让人望而却步，其中往往隐藏着极其苛刻的免责条款甚至是对个人隐私的过度索取。
+- One-click extraction of the current page text; backend pre-checks whether it is really a policy/TOS, with forced analysis as a fallback.
+  一键提取当前页面文本；后端先判断是否为协议内容，必要时可强制执行。
+- 3 evaluation rounds per document; median scores reduce AI scoring fluctuation.
+  同一份协议评估 3 次，取中位数，降低 AI 打分波动。
+- Weighted dimension scores, penalty flags, overall trust score, SVG radar chart.
+  加权维度评分、特殊扣分项、综合信任分与 SVG 雷达图。
+- Evaluation history is persisted locally as JSON.
+  评测历史以 JSON 形式保存到本地。
 
-本项目利用 **DeepSeek AI** 的强大自然语言理解能力，一键为你生成通俗易懂的“安全体检报告单”。插件会智能提取网页文本，从多个法律维度进行深度剖析，并以可视化的雷达图、警示标识和信任评分直观展现。
+## Architecture · 架构
 
-![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome&logoColor=white)
-![Python 3](https://img.shields.io/badge/Python-3.x-blue?logo=python&logoColor=white)
-![DeepSeek](https://img.shields.io/badge/AI-DeepSeek-black)
+- `popup.html` / `popup.js` — Edge/Chrome Manifest V3 extension.
+- `server.py` — local HTTP server on port 8000.
+- `python_script/evaluator.py` — LLM evaluation logic (DeepSeek by default).
+- `python_script/sec.md` / `cont.md` and `sec.json` / `cont.json` — scoring criteria for privacy policy and ToS.
 
----
+Provider: DeepSeek by default; switch in `python_script/config.yaml` (`llm_provider`, `base_url`, `model`, API keys) or via env vars (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `ORCAROUTER_API_KEY`).
+模型供应商：默认 DeepSeek；可在 `python_script/config.yaml` 或环境变量中切换（如 OrcaRouter）。
 
-## ✨ 核心特性
+## Quick Start · 快速开始
 
-- 🔍 **一键智能提取与拦截**：点击插件按钮自动提取当前页面的纯文本。后端内置低成本的“AI 预检查分类器”，如果检测到页面非协议内容将自动拦截（支持用户手动强制检测）。
-- ⚖️ **防幻觉三重判定机制**：为了消除 AI 打分的随机性和幻觉，系统会在后台对同一份协议进行 **3 次** 深度测评，最终各指标得分均取 **中位数**，确保打分绝对客观、稳定。
-- 📊 **可视化 UI 与雷达图**：Chrome 插件面板自动绘制多维能力 SVG 雷达图，实时展示各项能力得分，具有完美的动画加载反馈。
-- 🚨 **霸王条款与红线预警**：一旦发现“随时单方修改并拒绝通知”、“数据无限期保留”、“强制转让版权”等侵权行为，直接在面板中触发特殊判定扣分并标红警告。
-- ⏱️ **字数统计与阅读时长计算**：自动精准计算提取的文本总字数，并以普通人 250-300 字/分钟的阅读速度计算出预估阅读时长区间。
-- 💾 **历史记录持久化**：所有的评测数据（包含网页标题、URL、检测时间、综合长短与细则得分）将自动持久化追加到后端的 `*_evaluation_result.json` 历史日志中，方便日后溯源排查。
+Backend / 后端：
 
----
+1. `pip install openai`
+2. Set `DEEPSEEK_API_KEY` or edit `python_script/config.yaml`.
+   配置 API Key（环境变量或 `config.yaml`）。
+3. `python server.py` — serves http://localhost:8000.
+   启动本地服务。
 
-## 🏗️ 架构设计
+Extension / 扩展：
 
-本项目采用前后端分离结构：
+1. Open `edge://extensions` (or `chrome://extensions`), enable Developer mode.
+   打开扩展管理页并开启开发者模式。
+2. "Load unpacked" and select this folder (contains `manifest.json`).
+   选择"加载解压的扩展程序"，指向本目录。
+3. Open a privacy policy / ToS page, click the extension icon, and choose 隐私政策智能评估 or 用户协议智能评估.
+   打开协议页面，点击插件图标，选择"隐私政策智能评估"或"用户协议智能评估"。
 
-- **前端层 (Chrome Manifest V3)**：
-  - `popup.html` / `popup.js` 负责拦截交互、下发提取指令（Content Scripts）、展示打分与雷达图。
-- **后端层 (Python HTTP Server)**：
-  - `server.py`：开启了 8000 端口，接听前端传来的文本和元数据。
-  - `evaluator.py`：执行 AI 规划、管理 DeepSeek 接口请求，配合 Markdown/JSON 规则对内容进行拆解、多轮评估、中位数计算以及日志持久化归档。
+Results are appended to `python_script/sec_evaluation_result.json` (privacy) and `python_script/cont_evaluation_result.json` (ToS).
+分析结果会追加保存到 `python_script/sec_evaluation_result.json`（隐私政策）和 `python_script/cont_evaluation_result.json`（用户协议）。
 
----
+## License · 许可证
 
-## 🚀 安装与运行
-
-### 1. 后端服务配置 (Python)
-
-1. 确保已安装 Python 3 环境。
-2. 安装必要的依赖（如 `openai` SDK，用于接入兼容的 DeepSeek 接口）：
-   ```bash
-   pip install openai
-   ```
-3. **配置 API Key**：
-   你可以将你的 DeepSeek API Key 写入系统的环境变量 `DEEPSEEK_API_KEY`，或者在 `python_script/` 目录下创建一个 `config.yaml` 填写。
-4. **启动本地服务**：
-   在终端进入项目目录并运行后端代理服务：
-   ```bash
-   python server.py
-   ```
-   *服务将运行在 `http://localhost:8000` 并等待插件的调用请求。*
-
-### 2. 前端插件安装 (Chrome)
-
-1. 打开 Chrome 浏览器，地址栏输入并前往 `chrome://extensions/`。
-2. 开启右上角的 **“开发者模式 (Developer mode)”**。
-3. 点击左上角的 **“加载已解压的扩展程序 (Load unpacked)”**。
-4. 选择本项目所在的根文件夹（即含有 `manifest.json` 的目录）。
-5. 将插件固定 (Pin) 在浏览器右上角以便随时使用。
-
----
-
-## 🎮 使用方法
-
-1. 在浏览器中打开一份冗长的《隐私政策》或《用户服务协议》页面。
-2. 点击右上角的插件图标。
-3. 界面会显示当前检测的网页字数与预估阅读时间。
-4. 选择点击 **“🛡️ 隐私政策智能评估”** 或 **“📜 用户协议智能评估”**。
-5. 稍等片刻（插件面板会有进度提示），完成后将为你展示全面的结果面板。
-6. 所有分析完毕的最终数据均自动存储于后端的：
-   - `python_script/sec_evaluation_result.json`（隐私类整理）
-   - `python_script/cont_evaluation_result.json`（服务类整理）
-
----
-
-## 📝 评估维度说明
-
-系统基于内置的严格法务提示词 (`sec.md` 和 `cont.md`) 进行判别。主要评估维度包含但不限于：
-
-**对于隐私政策：**
-- 信息的收集与使用边界
-- 个人信息的共享、转移与公开披露
-- 用户信息管理的自主权利
-- 信息安全保障能力与未成年人保护
-
-**对于用户协议：**
-- 用户的权利与义务是否对等
-- 平台责任的上限以及不合理免责
-- 平台权力的边界与单方面修改协议约束
-- 用户维权的便利性等
-
----
-
-## 📜 许可证
-
-CC0
-
-上传者放弃该仓库的**一切权利**
+CC0 — free to use, modify and redistribute. / 放弃一切权利，可自由使用、修改与再分发。
